@@ -15,23 +15,23 @@ function buildNav() {
   const allPill = document.createElement('button');
   allPill.className = 'nav-pill active';
   allPill.dataset.category = '';
-  allPill.innerHTML = `<span class="material-icons-round">apps</span>All`;
-  allPill.addEventListener('click', () => setCategory(null));
+  allPill.innerHTML = '<span class="material-icons-round">apps</span>All';
+  allPill.addEventListener('click', function() { setCategory(null); });
   categoryNav.appendChild(allPill);
 
-  HACKS.forEach(cat => {
+  HACKS.forEach(function(cat) {
     const pill = document.createElement('button');
     pill.className = 'nav-pill';
     pill.dataset.category = cat.category;
-    pill.innerHTML = `<span class="material-icons-round">${cat.icon}</span>${cat.category}`;
-    pill.addEventListener('click', () => setCategory(cat.category));
+    pill.innerHTML = '<span class="material-icons-round">' + cat.icon + '</span>' + cat.category;
+    pill.addEventListener('click', function() { setCategory(cat.category); });
     categoryNav.appendChild(pill);
   });
 }
 
 function setCategory(cat) {
   activeCategory = cat;
-  categoryNav.querySelectorAll('.nav-pill').forEach(pill => {
+  categoryNav.querySelectorAll('.nav-pill').forEach(function(pill) {
     const isCurrent = cat === null ? pill.dataset.category === '' : pill.dataset.category === cat;
     pill.classList.toggle('active', isCurrent);
   });
@@ -41,18 +41,17 @@ function setCategory(cat) {
 function render() {
   const query = searchInput.value.toLowerCase().trim();
   hackList.innerHTML = '';
-
   let totalShown = 0;
 
-  HACKS.forEach(cat => {
+  HACKS.forEach(function(cat) {
     if (activeCategory && cat.category !== activeCategory) return;
 
-    const filtered = cat.hacks.filter(h =>
-      !query ||
-      h.name.toLowerCase().includes(query) ||
-      h.description.toLowerCase().includes(query) ||
-      cat.category.toLowerCase().includes(query)
-    );
+    const filtered = cat.hacks.filter(function(h) {
+      return !query ||
+        h.name.toLowerCase().includes(query) ||
+        h.description.toLowerCase().includes(query) ||
+        cat.category.toLowerCase().includes(query);
+    });
 
     if (filtered.length === 0) return;
 
@@ -61,29 +60,27 @@ function render() {
 
     const header = document.createElement('div');
     header.className = 'category-header';
-    header.innerHTML = `
-      <div class="category-dot" style="background:${cat.color}"></div>
-      <h2>${cat.category}</h2>
-    `;
+    header.innerHTML =
+      '<div class="category-dot" style="background:' + cat.color + '"></div>' +
+      '<h2>' + cat.category + '</h2>';
     section.appendChild(header);
 
-    filtered.forEach((hack, i) => {
+    filtered.forEach(function(hack, i) {
       const card = document.createElement('div');
       card.className = 'hack-card' + (hack.isLink ? ' link-card' : '');
-      card.style.animationDelay = `${i * 0.04}s`;
-      card.innerHTML = `
-        <div class="hack-icon-wrap" style="background:${cat.color}">
-          <span class="material-icons-round">${cat.icon}</span>
-        </div>
-        <div class="hack-info">
-          <div class="hack-name">${hack.name}</div>
-          <div class="hack-desc">${hack.description}</div>
-        </div>
-        <div class="hack-action">
-          <span class="material-icons-round">${hack.isLink ? 'open_in_new' : 'play_arrow'}</span>
-        </div>
-      `;
-      card.addEventListener('click', () => runHack(hack));
+      card.style.animationDelay = (i * 0.04) + 's';
+      card.innerHTML =
+        '<div class="hack-icon-wrap" style="background:' + cat.color + '">' +
+          '<span class="material-icons-round">' + cat.icon + '</span>' +
+        '</div>' +
+        '<div class="hack-info">' +
+          '<div class="hack-name">' + hack.name + '</div>' +
+          '<div class="hack-desc">' + hack.description + '</div>' +
+        '</div>' +
+        '<div class="hack-action">' +
+          '<span class="material-icons-round">' + (hack.isLink ? 'open_in_new' : 'play_arrow') + '</span>' +
+        '</div>';
+      card.addEventListener('click', function() { runHack(hack); });
       section.appendChild(card);
       totalShown++;
     });
@@ -92,12 +89,11 @@ function render() {
   });
 
   if (totalShown === 0) {
-    hackList.innerHTML = `
-      <div class="no-results">
-        <span class="material-icons-round">search_off</span>
-        <p>No hacks found</p>
-      </div>
-    `;
+    hackList.innerHTML =
+      '<div class="no-results">' +
+        '<span class="material-icons-round">search_off</span>' +
+        '<p>No hacks found</p>' +
+      '</div>';
   }
 }
 
@@ -117,28 +113,29 @@ function runHack(hack) {
     return;
   }
 
-  executeHack(hack);
+  executeHack(hack, null);
 }
 
 function executeHack(hack, input) {
-  const codeStr = hack.needsInput
-    ? `(${hack.code.toString()})(${JSON.stringify(input)})`
-    : `(${hack.code.toString()})()`;
-
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
     if (!tabs[0]) {
       showToast('No active tab found', 'error');
       return;
     }
+
+    const tabId = tabs[0].id;
+    const scriptArgs = hack.needsInput ? [input] : [];
+
     chrome.scripting.executeScript({
-      target: { tabId: tabs[0].id },
-      func: new Function(codeStr),
+      target: { tabId: tabId },
+      func: hack.func,
+      args: scriptArgs,
       world: 'MAIN'
-    }, (results) => {
+    }, function() {
       if (chrome.runtime.lastError) {
         showToast('Failed: ' + chrome.runtime.lastError.message, 'error');
       } else {
-        showToast(`${hack.name} executed`, 'success');
+        showToast(hack.name + ' executed!', 'success');
       }
     });
   });
@@ -146,16 +143,16 @@ function executeHack(hack, input) {
 
 function showToast(msg, type) {
   toastEl.textContent = msg;
-  toastEl.className = `toast ${type} show`;
-  setTimeout(() => { toastEl.classList.remove('show'); }, 2000);
+  toastEl.className = 'toast ' + type + ' show';
+  setTimeout(function() { toastEl.classList.remove('show'); }, 2000);
 }
 
-modalCancel.addEventListener('click', () => {
+modalCancel.addEventListener('click', function() {
   modalOverlay.classList.add('hidden');
   pendingHack = null;
 });
 
-modalRun.addEventListener('click', () => {
+modalRun.addEventListener('click', function() {
   if (pendingHack) {
     const val = modalInput.value;
     modalOverlay.classList.add('hidden');
@@ -164,7 +161,7 @@ modalRun.addEventListener('click', () => {
   }
 });
 
-modalInput.addEventListener('keydown', (e) => {
+modalInput.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') modalRun.click();
   if (e.key === 'Escape') modalCancel.click();
 });
