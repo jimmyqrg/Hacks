@@ -166,6 +166,85 @@ function hack_fun_showIframeUrls() {
   });
 }
 
+function hack_fun_wordCount() {
+  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  var total = 0;
+  while (walker.nextNode()) {
+    var el = walker.currentNode.parentElement;
+    if (el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)) {
+      var text = walker.currentNode.textContent.trim();
+      if (text.length > 0) {
+        total += text.split(/\s+/).length;
+      }
+    }
+  }
+  alert('Visible word count: ' + total.toLocaleString());
+}
+
+function hack_fun_highlightLinks() {
+  var style = document.getElementById('pollora-highlight-links');
+  if (style) {
+    style.remove();
+    return;
+  }
+  style = document.createElement('style');
+  style.id = 'pollora-highlight-links';
+  style.textContent =
+    'a { outline: 2px solid #7c5cfc !important; outline-offset: 2px !important; ' +
+    'border-radius: 3px !important; ' +
+    'box-shadow: 0 0 8px rgba(124, 92, 252, 0.5) !important; ' +
+    'transition: outline-color 0.2s, box-shadow 0.2s !important; } ' +
+    'a:hover { outline-color: #51cf66 !important; ' +
+    'box-shadow: 0 0 12px rgba(81, 207, 102, 0.6) !important; }';
+  document.head.appendChild(style);
+}
+
+function hack_fun_darkMode() {
+  var style = document.getElementById('pollora-dark-mode');
+  if (style) {
+    style.remove();
+    return;
+  }
+  style = document.createElement('style');
+  style.id = 'pollora-dark-mode';
+  style.textContent =
+    'html { filter: invert(0.9) hue-rotate(180deg) !important; } ' +
+    'img, video, canvas, picture, svg, [style*="background-image"] ' +
+    '{ filter: invert(1) hue-rotate(180deg) !important; }';
+  document.head.appendChild(style);
+}
+
+function hack_fun_screenshot() {
+  var script = document.getElementById('pollora-h2c');
+  function capture() {
+    html2canvas(document.body, { useCORS: true, scale: window.devicePixelRatio || 1 })
+      .then(function(canvas) {
+        canvas.toBlob(function(blob) {
+          navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]).then(function() {
+            alert('Screenshot copied to clipboard!');
+          }).catch(function() {
+            var a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = 'screenshot.png';
+            a.click();
+            alert('Clipboard not available — screenshot downloaded instead.');
+          });
+        });
+      });
+  }
+  if (typeof html2canvas === 'function') {
+    capture();
+  } else {
+    var s = document.createElement('script');
+    s.id = 'pollora-h2c';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = capture;
+    document.head.appendChild(s);
+  }
+}
+
 const HACKS = [
   {
     category: "Quizizz",
@@ -301,6 +380,26 @@ const HACKS = [
         name: "Show Iframe URLs",
         description: "Display the source URL above each iframe with click to copy",
         func: hack_fun_showIframeUrls
+      },
+      {
+        name: "Word Count",
+        description: "Count all visible words on the page",
+        func: hack_fun_wordCount
+      },
+      {
+        name: "Highlight All Links",
+        description: "Toggle a glowing outline on every link (run again to remove)",
+        func: hack_fun_highlightLinks
+      },
+      {
+        name: "Dark Mode Toggle",
+        description: "Force dark mode on any site via color inversion (run again to undo)",
+        func: hack_fun_darkMode
+      },
+      {
+        name: "Screenshot to Clipboard",
+        description: "Capture the visible page and copy it to your clipboard",
+        func: hack_fun_screenshot
       }
     ]
   },
