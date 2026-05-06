@@ -328,61 +328,6 @@ function hack_fun_screenshot() {
   }
 }
 
-function hack_gimkit_freePremium() {
-  var host = window.location.hostname;
-  if (!host.includes('gimkit.com')) {
-    alert('Please run this on gimkit.com');
-    return;
-  }
-  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Free%20Premium.js')
-    .then(function(r) { return r.text(); })
-    .then(function(t) { eval(t); });
-}
-
-function hack_gimkit_showAnswers() {
-  var host = window.location.hostname;
-  if (!host.includes('gimkit.com')) {
-    alert('Please run this on gimkit.com');
-    return;
-  }
-  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Show%20Correct%20Answers.js')
-    .then(function(r) { return r.text(); })
-    .then(function(t) { eval(t); });
-}
-
-function hack_gimkit_answerBot() {
-  var host = window.location.hostname;
-  if (!host.includes('gimkit.com')) {
-    alert('Please run this on gimkit.com');
-    return;
-  }
-  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Answer%20Bot.js')
-    .then(function(r) { return r.text(); })
-    .then(function(t) { eval(t); });
-}
-
-function hack_gimkit_showImposters() {
-  var host = window.location.hostname;
-  if (!host.includes('gimkit.com')) {
-    alert('Please run this on gimkit.com');
-    return;
-  }
-  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Trust%20No-One/Show%20Imposters.js')
-    .then(function(r) { return r.text(); })
-    .then(function(t) { eval(t); });
-}
-
-function hack_gimkit_getCash() {
-  var host = window.location.hostname;
-  if (!host.includes('gimkit.com')) {
-    alert('Please run this on gimkit.com');
-    return;
-  }
-  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Classic/Get%20Cash.js')
-    .then(function(r) { return r.text(); })
-    .then(function(t) { eval(t); });
-}
-
 const HACKS = [
   {
     category: "Quizizz",
@@ -484,27 +429,32 @@ const HACKS = [
       {
         name: "Free Premium",
         description: "Unlock Gimkit premium features for free",
-        func: hack_gimkit_freePremium
+        remoteUrl: "https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Free%20Premium.js",
+        hostMatch: "gimkit.com"
       },
       {
         name: "Show Correct Answers",
         description: "Hide wrong answers and reveal the correct ones",
-        func: hack_gimkit_showAnswers
+        remoteUrl: "https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Show%20Correct%20Answers.js",
+        hostMatch: "gimkit.com"
       },
       {
         name: "Answer Bot",
         description: "Automatically answer questions for you",
-        func: hack_gimkit_answerBot
+        remoteUrl: "https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Answer%20Bot.js",
+        hostMatch: "gimkit.com"
       },
       {
         name: "Show Imposters (Trust No One)",
         description: "Reveal who the imposters are in Trust No One mode",
-        func: hack_gimkit_showImposters
+        remoteUrl: "https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Trust%20No-One/Show%20Imposters.js",
+        hostMatch: "gimkit.com"
       },
       {
         name: "Get Cash (Classic)",
         description: "Set your cash to any amount in Classic mode",
-        func: hack_gimkit_getCash
+        remoteUrl: "https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Classic/Get%20Cash.js",
+        hostMatch: "gimkit.com"
       },
       {
         name: "GimKit Hacks Repo",

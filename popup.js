@@ -123,7 +123,40 @@ function executeHack(hack, input) {
       return;
     }
 
-    const tabId = tabs[0].id;
+    const tab = tabs[0];
+    const tabId = tab.id;
+
+    if (hack.remoteUrl) {
+      if (hack.hostMatch && !tab.url.includes(hack.hostMatch)) {
+        showToast('Please navigate to ' + hack.hostMatch + ' first', 'error');
+        return;
+      }
+      showToast('Loading ' + hack.name + '...', 'success');
+      fetch(hack.remoteUrl)
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(function(code) {
+          chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            func: function(c) { eval(c); },
+            args: [code],
+            world: 'MAIN'
+          }, function() {
+            if (chrome.runtime.lastError) {
+              showToast('Failed: ' + chrome.runtime.lastError.message, 'error');
+            } else {
+              showToast(hack.name + ' executed!', 'success');
+            }
+          });
+        })
+        .catch(function(err) {
+          showToast('Download failed: ' + err.message, 'error');
+        });
+      return;
+    }
+
     const scriptArgs = hack.needsInput ? [input] : [];
 
     chrome.scripting.executeScript({
