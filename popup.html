@@ -10,20 +10,21 @@
 </head>
 <body>
   <div class="app">
-    <header>
-      <div class="header-content">
+    <aside class="sidebar">
+      <div class="sidebar-header">
         <span class="material-icons-round header-icon">sports_esports</span>
         <h1>Pollora</h1>
       </div>
       <div class="search-wrap">
         <span class="material-icons-round search-icon">search</span>
-        <input type="text" id="search" placeholder="Search hacks..." autocomplete="off">
+        <input type="text" id="search" placeholder="Search..." autocomplete="off">
       </div>
-    </header>
+      <nav id="category-nav"></nav>
+    </aside>
 
-    <nav id="category-nav"></nav>
-
-    <main id="hack-list"></main>
+    <div class="content">
+      <main id="hack-list"></main>
+    </div>
 
     <div id="toast" class="toast"></div>
 

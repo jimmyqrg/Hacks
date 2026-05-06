@@ -192,17 +192,14 @@ function hack_fun_showIframeUrls() {
       navigator.clipboard.writeText(url).then(function() {
         copyHint.textContent = 'copied!';
         copyHint.style.color = '#51cf66';
-
         box.style.animation = 'none';
         void box.offsetWidth;
         box.style.animation = 'pollora-flash 0.6s ease';
         box.style.boxShadow = '0 0 12px rgba(81,207,102,0.4)';
-
         var badge = document.createElement('span');
         badge.className = 'pollora-copy-badge';
         badge.textContent = 'Copied!';
         box.appendChild(badge);
-
         setTimeout(function() {
           copyHint.textContent = 'click to copy';
           copyHint.style.color = '#8888a0';
@@ -266,10 +263,7 @@ function hack_fun_wordCount() {
 
 function hack_fun_highlightLinks() {
   var style = document.getElementById('pollora-highlight-links');
-  if (style) {
-    style.remove();
-    return;
-  }
+  if (style) { style.remove(); return; }
   style = document.createElement('style');
   style.id = 'pollora-highlight-links';
   style.textContent =
@@ -284,10 +278,7 @@ function hack_fun_highlightLinks() {
 
 function hack_fun_darkMode() {
   var style = document.getElementById('pollora-dark-mode');
-  if (style) {
-    style.remove();
-    return;
-  }
+  if (style) { style.remove(); return; }
   style = document.createElement('style');
   style.id = 'pollora-dark-mode';
   style.textContent =
@@ -298,7 +289,6 @@ function hack_fun_darkMode() {
 }
 
 function hack_fun_screenshot() {
-  var script = document.getElementById('pollora-h2c');
   function capture() {
     html2canvas(document.body, { useCORS: true, scale: window.devicePixelRatio || 1 })
       .then(function(canvas) {
@@ -321,11 +311,343 @@ function hack_fun_screenshot() {
     capture();
   } else {
     var s = document.createElement('script');
-    s.id = 'pollora-h2c';
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     s.onload = capture;
     document.head.appendChild(s);
   }
+}
+
+/* ── Website / Proxy Tools ── */
+
+function hack_web_enableRightClick() {
+  document.oncontextmenu = null;
+  document.onselectstart = null;
+  document.ondragstart = null;
+  document.onmousedown = null;
+  document.body.oncontextmenu = null;
+  document.body.onselectstart = null;
+  var all = document.querySelectorAll('*');
+  all.forEach(function(el) {
+    el.oncontextmenu = null;
+    el.onselectstart = null;
+    el.style.userSelect = 'auto';
+    el.style.webkitUserSelect = 'auto';
+  });
+  var s = document.createElement('style');
+  s.textContent = '* { user-select: auto !important; -webkit-user-select: auto !important; }';
+  document.head.appendChild(s);
+  document.addEventListener('contextmenu', function(e) { e.stopPropagation(); }, true);
+  alert('Right-click and text selection re-enabled!');
+}
+
+function hack_web_removeOverlays() {
+  var removed = 0;
+  document.querySelectorAll('*').forEach(function(el) {
+    var style = window.getComputedStyle(el);
+    if ((style.position === 'fixed' || style.position === 'sticky') &&
+        parseFloat(style.zIndex) > 100 &&
+        el.tagName !== 'HEADER' && el.tagName !== 'NAV') {
+      el.remove();
+      removed++;
+    }
+  });
+  document.body.style.overflow = 'auto';
+  document.documentElement.style.overflow = 'auto';
+  document.querySelectorAll('.modal, .overlay, .popup, [class*="paywall"], [class*="cookie"], [class*="consent"], [class*="adblock"]').forEach(function(el) {
+    el.remove();
+    removed++;
+  });
+  alert('Removed ' + removed + ' overlay(s). Scroll restored.');
+}
+
+function hack_web_bypassPaywall() {
+  document.querySelectorAll('[class*="paywall"], [class*="subscribe"], [class*="premium-wall"], [id*="paywall"], [class*="gate"]').forEach(function(el) {
+    el.remove();
+  });
+  document.querySelectorAll('*').forEach(function(el) {
+    var s = window.getComputedStyle(el);
+    if (s.overflow === 'hidden' && el !== document.body && el !== document.documentElement) {
+      el.style.overflow = 'visible';
+      el.style.maxHeight = 'none';
+    }
+  });
+  document.body.style.overflow = 'auto';
+  document.documentElement.style.overflow = 'auto';
+  document.querySelectorAll('[style*="blur"]').forEach(function(el) {
+    el.style.filter = 'none';
+  });
+  alert('Paywall elements removed. Content should be visible now.');
+}
+
+/* ── Iframe / Embed Tools ── */
+
+function hack_iframe_extractAll() {
+  var iframes = document.querySelectorAll('iframe');
+  if (iframes.length === 0) { alert('No iframes found on this page.'); return; }
+  var urls = [];
+  iframes.forEach(function(f, i) {
+    urls.push((i + 1) + '. ' + (f.src || f.getAttribute('src') || '(no src)'));
+  });
+  var text = urls.join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    alert('Found ' + iframes.length + ' iframe(s). URLs copied to clipboard!\n\n' + text);
+  }).catch(function() {
+    alert('Found ' + iframes.length + ' iframe(s):\n\n' + text);
+  });
+}
+
+function hack_iframe_fullscreen() {
+  var iframes = document.querySelectorAll('iframe');
+  if (iframes.length === 0) { alert('No iframes found.'); return; }
+  if (iframes.length === 1) {
+    iframes[0].requestFullscreen();
+    return;
+  }
+  var style = document.createElement('style');
+  style.id = 'pollora-fs-picker';
+  style.textContent = 'iframe { outline: 4px solid #7c5cfc !important; cursor: crosshair !important; }';
+  document.head.appendChild(style);
+  alert('Click any iframe to make it fullscreen.');
+  iframes.forEach(function(f) {
+    f.addEventListener('click', function handler() {
+      f.requestFullscreen();
+      var s = document.getElementById('pollora-fs-picker');
+      if (s) s.remove();
+      iframes.forEach(function(ff) { ff.removeEventListener('click', handler); });
+    }, { once: true });
+  });
+}
+
+function hack_iframe_openInTab() {
+  var iframes = document.querySelectorAll('iframe');
+  if (iframes.length === 0) { alert('No iframes found.'); return; }
+  var opened = 0;
+  iframes.forEach(function(f) {
+    var src = f.src || f.getAttribute('src');
+    if (src && src !== 'about:blank') {
+      window.open(src, '_blank');
+      opened++;
+    }
+  });
+  if (opened === 0) alert('No iframes with valid URLs found.');
+}
+
+function hack_iframe_inject(input) {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0f0f14;';
+  var iframe = document.createElement('iframe');
+  iframe.src = input;
+  iframe.style.cssText = 'width:100%;height:100%;border:none;';
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.setAttribute('allow', 'autoplay; fullscreen');
+  overlay.appendChild(iframe);
+  document.body.appendChild(overlay);
+}
+
+/* ── Unblocked Games Tools ── */
+
+function hack_games_extractGameUrl() {
+  var iframes = document.querySelectorAll('iframe');
+  var gameUrls = [];
+  iframes.forEach(function(f) {
+    var src = f.src || '';
+    if (src && src !== 'about:blank' && !src.includes('ads') && !src.includes('analytics')) {
+      gameUrls.push(src);
+    }
+  });
+  var canvasGames = document.querySelectorAll('canvas');
+  var embedGames = document.querySelectorAll('embed, object');
+  var result = 'Game Detection Results:\n\n';
+  if (gameUrls.length) result += 'Iframe games:\n' + gameUrls.join('\n') + '\n\n';
+  if (canvasGames.length) result += 'Canvas games found: ' + canvasGames.length + '\n';
+  if (embedGames.length) result += 'Embed/Object games found: ' + embedGames.length + '\n';
+  if (!gameUrls.length && !canvasGames.length && !embedGames.length) {
+    result += 'No game elements detected.';
+  } else if (gameUrls.length) {
+    navigator.clipboard.writeText(gameUrls[0]);
+    result += '\nFirst game URL copied to clipboard!';
+  }
+  alert(result);
+}
+
+function hack_games_removeAds() {
+  var removed = 0;
+  var adSelectors = [
+    'iframe[src*="ads"]', 'iframe[src*="doubleclick"]', 'iframe[src*="googlesyndication"]',
+    'iframe[src*="adserver"]', 'iframe[src*="banner"]',
+    '[class*="ad-"]', '[class*="ad_"]', '[class*="ads-"]', '[class*="ads_"]',
+    '[class*="adsbygoogle"]', '[id*="ad-"]', '[id*="ad_"]',
+    '[class*="sponsor"]', '[class*="banner"]',
+    'ins.adsbygoogle', '.ad-container', '.ad-wrapper', '#ad-container',
+    '[data-ad]', '[data-ads]'
+  ];
+  adSelectors.forEach(function(sel) {
+    document.querySelectorAll(sel).forEach(function(el) {
+      el.remove();
+      removed++;
+    });
+  });
+  alert('Removed ' + removed + ' ad element(s).');
+}
+
+function hack_games_forceFullscreen() {
+  var targets = document.querySelectorAll('canvas, iframe, embed, object, [class*="game"]');
+  var el = targets[0];
+  if (!el) { alert('No game element found.'); return; }
+  var style = document.createElement('style');
+  style.id = 'pollora-force-fs';
+  style.textContent =
+    'body > *:not(#pollora-fs-container) { display: none !important; }' +
+    '#pollora-fs-container { position: fixed !important; inset: 0 !important; z-index: 999999 !important; background: #000 !important; }' +
+    '#pollora-fs-container > * { width: 100% !important; height: 100% !important; display: block !important; }';
+  document.head.appendChild(style);
+  var container = document.createElement('div');
+  container.id = 'pollora-fs-container';
+  container.appendChild(el.cloneNode(true));
+  document.body.appendChild(container);
+}
+
+function hack_games_freezeTimers() {
+  if (window._polloraTimersFrozen) {
+    window.setInterval = window._polloraOrigSetInterval;
+    window.setTimeout = window._polloraOrigSetTimeout;
+    window._polloraTimersFrozen = false;
+    alert('Timers unfrozen.');
+    return;
+  }
+  window._polloraOrigSetInterval = window.setInterval;
+  window._polloraOrigSetTimeout = window.setTimeout;
+  var blocked = 0;
+  window.setInterval = function(fn, delay) {
+    if (delay && delay < 5000) {
+      blocked++;
+      return 0;
+    }
+    return window._polloraOrigSetInterval(fn, delay);
+  };
+  window.setTimeout = function(fn, delay) {
+    if (delay && delay < 5000) {
+      blocked++;
+      return 0;
+    }
+    return window._polloraOrigSetTimeout(fn, delay);
+  };
+  window._polloraTimersFrozen = true;
+  alert('Short timers frozen (<5s). Run again to unfreeze.');
+}
+
+function hack_games_autoClicker(input) {
+  if (window._polloraAutoClicker) {
+    clearInterval(window._polloraAutoClicker);
+    window._polloraAutoClicker = null;
+    alert('Auto clicker stopped.');
+    return;
+  }
+  var interval = parseInt(input) || 100;
+  alert('Click on the element you want to auto-click. You have 3 seconds...');
+  setTimeout(function() {
+    var target = document.activeElement || document.elementFromPoint(
+      window.innerWidth / 2, window.innerHeight / 2
+    );
+    window._polloraAutoClicker = setInterval(function() {
+      target.click();
+      target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    }, interval);
+    alert('Auto clicking every ' + interval + 'ms. Run again to stop.');
+  }, 3000);
+}
+
+function hack_games_speedHack(input) {
+  var speed = parseFloat(input) || 2;
+  if (window._polloraSpeedHack) {
+    window.requestAnimationFrame = window._polloraOrigRAF;
+    window._polloraSpeedHack = false;
+    alert('Speed hack removed. Normal speed restored.');
+    return;
+  }
+  window._polloraOrigRAF = window.requestAnimationFrame;
+  var lastTime = 0;
+  window.requestAnimationFrame = function(callback) {
+    return window._polloraOrigRAF(function(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      var elapsed = timestamp - lastTime;
+      var fakeTime = lastTime + elapsed * speed;
+      lastTime = timestamp;
+      callback(fakeTime);
+    });
+  };
+  window._polloraSpeedHack = true;
+  alert('Speed set to ' + speed + 'x. Run again to restore normal speed.');
+}
+
+/* ── Utility Tools ── */
+
+function hack_util_qrCode() {
+  var url = window.location.href;
+  var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.8);' +
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;';
+  var img = document.createElement('img');
+  img.src = qrUrl;
+  img.style.cssText = 'border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.5);';
+  var label = document.createElement('p');
+  label.textContent = 'QR code for this page — click anywhere to close';
+  label.style.cssText = 'color:#fff;font-family:sans-serif;font-size:14px;margin-top:16px;';
+  overlay.appendChild(img);
+  overlay.appendChild(label);
+  overlay.addEventListener('click', function() { overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function hack_util_copySource() {
+  var html = document.documentElement.outerHTML;
+  navigator.clipboard.writeText(html).then(function() {
+    alert('Full page source copied to clipboard! (' + html.length.toLocaleString() + ' characters)');
+  }).catch(function() {
+    alert('Failed to copy. Source length: ' + html.length.toLocaleString() + ' chars.');
+  });
+}
+
+function hack_util_listResources() {
+  var resources = performance.getEntriesByType('resource');
+  var byType = {};
+  resources.forEach(function(r) {
+    var ext = r.name.split('?')[0].split('.').pop().toLowerCase();
+    var type = 'other';
+    if (['js'].includes(ext)) type = 'JavaScript';
+    else if (['css'].includes(ext)) type = 'CSS';
+    else if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'].includes(ext)) type = 'Images';
+    else if (['woff', 'woff2', 'ttf', 'otf', 'eot'].includes(ext)) type = 'Fonts';
+    else if (['mp4', 'webm', 'ogg', 'mp3', 'wav'].includes(ext)) type = 'Media';
+    if (!byType[type]) byType[type] = [];
+    byType[type].push(r.name);
+  });
+  var text = 'Page Resources (' + resources.length + ' total):\n\n';
+  Object.keys(byType).sort().forEach(function(type) {
+    text += '── ' + type + ' (' + byType[type].length + ') ──\n';
+    byType[type].forEach(function(url) { text += '  ' + url + '\n'; });
+    text += '\n';
+  });
+  navigator.clipboard.writeText(text).then(function() {
+    alert('Resource list copied to clipboard!\n\n' + resources.length + ' resources found.');
+  });
+}
+
+function hack_util_cookieViewer() {
+  var cookies = document.cookie;
+  if (!cookies) { alert('No cookies found for this site.'); return; }
+  var parsed = cookies.split(';').map(function(c) { return c.trim(); });
+  var text = 'Cookies for ' + window.location.hostname + ':\n\n';
+  parsed.forEach(function(c, i) {
+    text += (i + 1) + '. ' + c + '\n';
+  });
+  navigator.clipboard.writeText(text).then(function() {
+    alert(text + '\nCopied to clipboard!');
+  }).catch(function() {
+    alert(text);
+  });
 }
 
 const HACKS = [
@@ -465,6 +787,106 @@ const HACKS = [
     ]
   },
   {
+    category: "Web Tools",
+    icon: "public",
+    color: "#e17055",
+    hacks: [
+      {
+        name: "Enable Right-Click",
+        description: "Re-enable right-click and text selection on pages that block it",
+        func: hack_web_enableRightClick
+      },
+      {
+        name: "Remove Overlays",
+        description: "Remove popups, cookie banners, login walls, and fixed overlays",
+        func: hack_web_removeOverlays
+      },
+      {
+        name: "Bypass Paywall",
+        description: "Strip paywall elements and restore scrolling",
+        func: hack_web_bypassPaywall
+      }
+    ]
+  },
+  {
+    category: "Iframe Tools",
+    icon: "web",
+    color: "#00b894",
+    hacks: [
+      {
+        name: "Show Iframe URLs",
+        description: "Display the source URL above each iframe with click to copy",
+        func: hack_fun_showIframeUrls
+      },
+      {
+        name: "Extract All Iframe URLs",
+        description: "List every iframe URL on the page and copy to clipboard",
+        func: hack_iframe_extractAll
+      },
+      {
+        name: "Fullscreen Iframe",
+        description: "Click any iframe to make it go true fullscreen",
+        func: hack_iframe_fullscreen
+      },
+      {
+        name: "Open Iframes in New Tabs",
+        description: "Open each iframe source URL in its own new tab",
+        func: hack_iframe_openInTab
+      },
+      {
+        name: "Inject Iframe",
+        description: "Paste a URL to load it as a fullscreen iframe overlay",
+        needsInput: true,
+        inputLabel: "URL to load in iframe:",
+        inputDefault: "https://example.com",
+        func: hack_iframe_inject
+      }
+    ]
+  },
+  {
+    category: "Game Tools",
+    icon: "stadia_controller",
+    color: "#fd79a8",
+    hacks: [
+      {
+        name: "Extract Game URL",
+        description: "Detect embedded games and extract their direct URLs",
+        func: hack_games_extractGameUrl
+      },
+      {
+        name: "Remove Ads",
+        description: "Remove ad iframes, banners, and common ad containers",
+        func: hack_games_removeAds
+      },
+      {
+        name: "Force Fullscreen",
+        description: "Make the game element fill the entire viewport",
+        func: hack_games_forceFullscreen
+      },
+      {
+        name: "Freeze Timers",
+        description: "Block short timers to stop countdowns and idle kicks (toggle)",
+        func: hack_games_freezeTimers
+      },
+      {
+        name: "Auto Clicker",
+        description: "Auto-click at a set interval in milliseconds (toggle)",
+        needsInput: true,
+        inputLabel: "Click interval in ms:",
+        inputDefault: "100",
+        func: hack_games_autoClicker
+      },
+      {
+        name: "Speed Hack",
+        description: "Speed up or slow down HTML5 game animations (toggle)",
+        needsInput: true,
+        inputLabel: "Speed multiplier (e.g. 2 = 2x fast, 0.5 = half speed):",
+        inputDefault: "2",
+        func: hack_games_speedHack
+      }
+    ]
+  },
+  {
     category: "Fun Hacks",
     icon: "mood",
     color: "#fa8231",
@@ -501,11 +923,6 @@ const HACKS = [
         name: "Show Passwords",
         description: "Reveal all password fields on the page",
         func: hack_fun_showPasswords
-      },
-      {
-        name: "Show Iframe URLs",
-        description: "Display the source URL above each iframe with click to copy",
-        func: hack_fun_showIframeUrls
       },
       {
         name: "Word Count",
@@ -546,6 +963,33 @@ const HACKS = [
         inputLabel: "Number of history entries to add:",
         inputDefault: "100",
         func: hack_school_historyFlood
+      }
+    ]
+  },
+  {
+    category: "Utility",
+    icon: "build",
+    color: "#636e72",
+    hacks: [
+      {
+        name: "QR Code for Page",
+        description: "Generate a QR code for the current page URL",
+        func: hack_util_qrCode
+      },
+      {
+        name: "Copy Page Source",
+        description: "Copy the full HTML source of the page to clipboard",
+        func: hack_util_copySource
+      },
+      {
+        name: "List All Resources",
+        description: "Dump all loaded JS, CSS, image, font, and media URLs",
+        func: hack_util_listResources
+      },
+      {
+        name: "Cookie Viewer",
+        description: "Display and copy all cookies for the current site",
+        func: hack_util_cookieViewer
       }
     ]
   },

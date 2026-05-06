@@ -12,41 +12,49 @@ let activeCategory = null;
 let pendingHack = null;
 
 function buildNav() {
-  const allPill = document.createElement('button');
-  allPill.className = 'nav-pill active';
-  allPill.dataset.category = '';
-  allPill.innerHTML = '<span class="material-icons-round">apps</span>All';
-  allPill.addEventListener('click', function() { setCategory(null); });
-  categoryNav.appendChild(allPill);
+  var allBtn = document.createElement('button');
+  allBtn.className = 'nav-item active';
+  allBtn.dataset.category = '';
+  var totalHacks = 0;
+  HACKS.forEach(function(c) { totalHacks += c.hacks.length; });
+  allBtn.innerHTML =
+    '<span class="material-icons-round">apps</span>' +
+    '<span>All</span>' +
+    '<span class="nav-count">' + totalHacks + '</span>';
+  allBtn.addEventListener('click', function() { setCategory(null); });
+  categoryNav.appendChild(allBtn);
 
   HACKS.forEach(function(cat) {
-    const pill = document.createElement('button');
-    pill.className = 'nav-pill';
-    pill.dataset.category = cat.category;
-    pill.innerHTML = '<span class="material-icons-round">' + cat.icon + '</span>' + cat.category;
-    pill.addEventListener('click', function() { setCategory(cat.category); });
-    categoryNav.appendChild(pill);
+    var btn = document.createElement('button');
+    btn.className = 'nav-item';
+    btn.dataset.category = cat.category;
+    btn.innerHTML =
+      '<span class="nav-dot" style="background:' + cat.color + '"></span>' +
+      '<span>' + cat.category + '</span>' +
+      '<span class="nav-count">' + cat.hacks.length + '</span>';
+    btn.addEventListener('click', function() { setCategory(cat.category); });
+    categoryNav.appendChild(btn);
   });
 }
 
 function setCategory(cat) {
   activeCategory = cat;
-  categoryNav.querySelectorAll('.nav-pill').forEach(function(pill) {
-    const isCurrent = cat === null ? pill.dataset.category === '' : pill.dataset.category === cat;
-    pill.classList.toggle('active', isCurrent);
+  categoryNav.querySelectorAll('.nav-item').forEach(function(btn) {
+    var isCurrent = cat === null ? btn.dataset.category === '' : btn.dataset.category === cat;
+    btn.classList.toggle('active', isCurrent);
   });
   render();
 }
 
 function render() {
-  const query = searchInput.value.toLowerCase().trim();
+  var query = searchInput.value.toLowerCase().trim();
   hackList.innerHTML = '';
-  let totalShown = 0;
+  var totalShown = 0;
 
   HACKS.forEach(function(cat) {
     if (activeCategory && cat.category !== activeCategory) return;
 
-    const filtered = cat.hacks.filter(function(h) {
+    var filtered = cat.hacks.filter(function(h) {
       return !query ||
         h.name.toLowerCase().includes(query) ||
         h.description.toLowerCase().includes(query) ||
@@ -55,20 +63,21 @@ function render() {
 
     if (filtered.length === 0) return;
 
-    const section = document.createElement('div');
+    var section = document.createElement('div');
     section.className = 'category-section';
 
-    const header = document.createElement('div');
+    var header = document.createElement('div');
     header.className = 'category-header';
     header.innerHTML =
       '<div class="category-dot" style="background:' + cat.color + '"></div>' +
-      '<h2>' + cat.category + '</h2>';
+      '<h2>' + cat.category + '</h2>' +
+      '<span class="hack-count">' + filtered.length + '</span>';
     section.appendChild(header);
 
     filtered.forEach(function(hack, i) {
-      const card = document.createElement('div');
+      var card = document.createElement('div');
       card.className = 'hack-card' + (hack.isLink ? ' link-card' : '');
-      card.style.animationDelay = (i * 0.04) + 's';
+      card.style.animationDelay = (i * 0.03) + 's';
       card.innerHTML =
         '<div class="hack-icon-wrap" style="background:' + cat.color + '">' +
           '<span class="material-icons-round">' + cat.icon + '</span>' +
@@ -123,8 +132,8 @@ function executeHack(hack, input) {
       return;
     }
 
-    const tab = tabs[0];
-    const tabId = tab.id;
+    var tab = tabs[0];
+    var tabId = tab.id;
 
     if (hack.remoteUrl) {
       if (hack.hostMatch && !tab.url.includes(hack.hostMatch)) {
@@ -157,7 +166,7 @@ function executeHack(hack, input) {
       return;
     }
 
-    const scriptArgs = hack.needsInput ? [input] : [];
+    var scriptArgs = hack.needsInput ? [input] : [];
 
     chrome.scripting.executeScript({
       target: { tabId: tabId },
@@ -187,7 +196,7 @@ modalCancel.addEventListener('click', function() {
 
 modalRun.addEventListener('click', function() {
   if (pendingHack) {
-    const val = modalInput.value;
+    var val = modalInput.value;
     modalOverlay.classList.add('hidden');
     executeHack(pendingHack, val);
     pendingHack = null;
