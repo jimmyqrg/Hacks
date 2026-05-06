@@ -116,8 +116,41 @@ function hack_fun_showIframeUrls() {
     document.querySelectorAll('.pollora-iframe-url-box').forEach(function(el) {
       el.remove();
     });
+    var animSheet = document.getElementById('pollora-iframe-animations');
+    if (animSheet) animSheet.remove();
+    document.querySelectorAll('iframe[data-pollora-tagged]').forEach(function(f) {
+      delete f.dataset.polloraTagged;
+    });
     alert('Iframe URL watcher stopped.');
     return;
+  }
+
+  if (!document.getElementById('pollora-iframe-animations')) {
+    var animStyle = document.createElement('style');
+    animStyle.id = 'pollora-iframe-animations';
+    animStyle.textContent =
+      '@keyframes pollora-flash{' +
+        '0%{background:#1a1a24;border-color:#7c5cfc}' +
+        '30%{background:#1a3a2a;border-color:#51cf66}' +
+        '100%{background:#1a1a24;border-color:#7c5cfc}' +
+      '}' +
+      '@keyframes pollora-badge-pop{' +
+        '0%{opacity:0;transform:translateY(0) scale(0.5)}' +
+        '20%{opacity:1;transform:translateY(-8px) scale(1.1)}' +
+        '40%{transform:translateY(-12px) scale(1)}' +
+        '100%{opacity:0;transform:translateY(-28px) scale(0.8)}' +
+      '}' +
+      '.pollora-iframe-url-box{transition:background 0.3s,border-color 0.3s,box-shadow 0.3s}' +
+      '.pollora-copy-badge{' +
+        'position:absolute;top:-4px;right:12px;' +
+        'background:#51cf66;color:#0f0f14;' +
+        'font-size:11px;font-weight:700;font-family:sans-serif;font-style:normal;' +
+        'padding:3px 10px;border-radius:12px;' +
+        'pointer-events:none;white-space:nowrap;' +
+        'animation:pollora-badge-pop 0.9s ease forwards;' +
+        'box-shadow:0 2px 10px rgba(81,207,102,0.5);' +
+      '}';
+    document.head.appendChild(animStyle);
   }
 
   function attachUrlBox(iframe) {
@@ -133,7 +166,7 @@ function hack_fun_showIframeUrls() {
       'background:#1a1a24;border:1px solid #7c5cfc;border-bottom:none;' +
       'border-radius:8px 8px 0 0;font-family:monospace;font-size:12px;' +
       'color:#e8e8f0;cursor:pointer;max-width:100%;box-sizing:border-box;' +
-      'z-index:999999;position:relative;';
+      'z-index:999999;position:relative;overflow:visible;';
 
     var label = document.createElement('span');
     label.textContent = 'iframe url: ';
@@ -148,7 +181,8 @@ function hack_fun_showIframeUrls() {
     var copyHint = document.createElement('span');
     copyHint.textContent = 'click to copy';
     copyHint.style.cssText =
-      'color:#8888a0;font-size:10px;white-space:nowrap;font-style:italic;';
+      'color:#8888a0;font-size:10px;white-space:nowrap;font-style:italic;' +
+      'transition:color 0.2s;';
 
     box.appendChild(label);
     box.appendChild(urlText);
@@ -158,10 +192,24 @@ function hack_fun_showIframeUrls() {
       navigator.clipboard.writeText(url).then(function() {
         copyHint.textContent = 'copied!';
         copyHint.style.color = '#51cf66';
+
+        box.style.animation = 'none';
+        void box.offsetWidth;
+        box.style.animation = 'pollora-flash 0.6s ease';
+        box.style.boxShadow = '0 0 12px rgba(81,207,102,0.4)';
+
+        var badge = document.createElement('span');
+        badge.className = 'pollora-copy-badge';
+        badge.textContent = 'Copied!';
+        box.appendChild(badge);
+
         setTimeout(function() {
           copyHint.textContent = 'click to copy';
           copyHint.style.color = '#8888a0';
-        }, 1500);
+          box.style.boxShadow = 'none';
+          box.style.animation = '';
+          if (badge.parentNode) badge.remove();
+        }, 1200);
       });
     });
 
@@ -280,6 +328,61 @@ function hack_fun_screenshot() {
   }
 }
 
+function hack_gimkit_freePremium() {
+  var host = window.location.hostname;
+  if (!host.includes('gimkit.com')) {
+    alert('Please run this on gimkit.com');
+    return;
+  }
+  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Free%20Premium.js')
+    .then(function(r) { return r.text(); })
+    .then(function(t) { eval(t); });
+}
+
+function hack_gimkit_showAnswers() {
+  var host = window.location.hostname;
+  if (!host.includes('gimkit.com')) {
+    alert('Please run this on gimkit.com');
+    return;
+  }
+  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Show%20Correct%20Answers.js')
+    .then(function(r) { return r.text(); })
+    .then(function(t) { eval(t); });
+}
+
+function hack_gimkit_answerBot() {
+  var host = window.location.hostname;
+  if (!host.includes('gimkit.com')) {
+    alert('Please run this on gimkit.com');
+    return;
+  }
+  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Default%20Scripts/Answer%20Bot.js')
+    .then(function(r) { return r.text(); })
+    .then(function(t) { eval(t); });
+}
+
+function hack_gimkit_showImposters() {
+  var host = window.location.hostname;
+  if (!host.includes('gimkit.com')) {
+    alert('Please run this on gimkit.com');
+    return;
+  }
+  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Trust%20No-One/Show%20Imposters.js')
+    .then(function(r) { return r.text(); })
+    .then(function(t) { eval(t); });
+}
+
+function hack_gimkit_getCash() {
+  var host = window.location.hostname;
+  if (!host.includes('gimkit.com')) {
+    alert('Please run this on gimkit.com');
+    return;
+  }
+  fetch('https://raw.githubusercontent.com/rxzyx/GimKit-Hacks/main/Classic/Get%20Cash.js')
+    .then(function(r) { return r.text(); })
+    .then(function(t) { eval(t); });
+}
+
 const HACKS = [
   {
     category: "Quizizz",
@@ -370,6 +473,44 @@ const HACKS = [
         description: "Open the Blooket Wiki for game info and strategies",
         isLink: true,
         url: "https://blooket.fandom.com/wiki/Blooket_Wiki"
+      }
+    ]
+  },
+  {
+    category: "Gimkit",
+    icon: "videogame_asset",
+    color: "#4ecdc4",
+    hacks: [
+      {
+        name: "Free Premium",
+        description: "Unlock Gimkit premium features for free",
+        func: hack_gimkit_freePremium
+      },
+      {
+        name: "Show Correct Answers",
+        description: "Hide wrong answers and reveal the correct ones",
+        func: hack_gimkit_showAnswers
+      },
+      {
+        name: "Answer Bot",
+        description: "Automatically answer questions for you",
+        func: hack_gimkit_answerBot
+      },
+      {
+        name: "Show Imposters (Trust No One)",
+        description: "Reveal who the imposters are in Trust No One mode",
+        func: hack_gimkit_showImposters
+      },
+      {
+        name: "Get Cash (Classic)",
+        description: "Set your cash to any amount in Classic mode",
+        func: hack_gimkit_getCash
+      },
+      {
+        name: "GimKit Hacks Repo",
+        description: "Open the full GimKit Hacks GitHub repository",
+        isLink: true,
+        url: "https://github.com/rxzyx/GimKit-Hacks"
       }
     ]
   },

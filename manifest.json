@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pollora",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Hacks for Blooket, Quizizz, Quizlet, Edpuzzle, Google Doodles & more",
   "permissions": ["activeTab", "scripting"],
   "action": {
