@@ -114,6 +114,7 @@ function hack_fun_showIframeUrls() {
     window._polloraIframeObserver.disconnect();
     window._polloraIframeObserver = null;
     document.querySelectorAll('.pollora-iframe-url-box').forEach(function(el) {
+      if (el._polloraCleanup) el._polloraCleanup();
       el.remove();
     });
     var animSheet = document.getElementById('pollora-iframe-animations');
@@ -153,6 +154,13 @@ function hack_fun_showIframeUrls() {
     document.head.appendChild(animStyle);
   }
 
+  function positionBox(box, iframe) {
+    var rect = iframe.getBoundingClientRect();
+    box.style.top = (window.scrollY + rect.top) + 'px';
+    box.style.left = (window.scrollX + rect.left) + 'px';
+    box.style.width = Math.max(rect.width, 200) + 'px';
+  }
+
   function attachUrlBox(iframe) {
     if (iframe.dataset.polloraTagged) return;
     iframe.dataset.polloraTagged = '1';
@@ -162,33 +170,36 @@ function hack_fun_showIframeUrls() {
     var box = document.createElement('div');
     box.className = 'pollora-iframe-url-box';
     box.style.cssText =
-      'display:flex;align-items:center;gap:8px;padding:6px 12px;' +
-      'background:#1a1a24;border:1px solid #7c5cfc;border-bottom:none;' +
-      'border-radius:8px 8px 0 0;font-family:monospace;font-size:12px;' +
-      'color:#e8e8f0;cursor:pointer;max-width:100%;box-sizing:border-box;' +
-      'z-index:999999;position:relative;overflow:visible;';
+      'display:flex;align-items:center;gap:8px;padding:4px 10px;' +
+      'background:rgba(26,26,36,0.92);border:1px solid #7c5cfc;' +
+      'border-radius:6px;font-family:monospace;font-size:11px;' +
+      'color:#e8e8f0;cursor:pointer;box-sizing:border-box;' +
+      'z-index:999999;position:absolute;overflow:visible;' +
+      'pointer-events:auto;backdrop-filter:blur(6px);' +
+      'max-height:28px;line-height:18px;';
 
     var label = document.createElement('span');
-    label.textContent = 'iframe url: ';
-    label.style.cssText = 'color:#7c5cfc;font-weight:bold;white-space:nowrap;';
+    label.textContent = 'src: ';
+    label.style.cssText = 'color:#7c5cfc;font-weight:bold;white-space:nowrap;flex-shrink:0;';
 
     var urlText = document.createElement('span');
     urlText.textContent = url;
     urlText.style.cssText =
-      'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;';
+      'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;';
     urlText.title = url;
 
     var copyHint = document.createElement('span');
-    copyHint.textContent = 'click to copy';
+    copyHint.textContent = 'copy';
     copyHint.style.cssText =
       'color:#8888a0;font-size:10px;white-space:nowrap;font-style:italic;' +
-      'transition:color 0.2s;';
+      'transition:color 0.2s;flex-shrink:0;';
 
     box.appendChild(label);
     box.appendChild(urlText);
     box.appendChild(copyHint);
 
-    box.addEventListener('click', function() {
+    box.addEventListener('click', function(e) {
+      e.stopPropagation();
       navigator.clipboard.writeText(url).then(function() {
         copyHint.textContent = 'copied!';
         copyHint.style.color = '#51cf66';
@@ -201,7 +212,7 @@ function hack_fun_showIframeUrls() {
         badge.textContent = 'Copied!';
         box.appendChild(badge);
         setTimeout(function() {
-          copyHint.textContent = 'click to copy';
+          copyHint.textContent = 'copy';
           copyHint.style.color = '#8888a0';
           box.style.boxShadow = 'none';
           box.style.animation = '';
@@ -210,9 +221,16 @@ function hack_fun_showIframeUrls() {
       });
     });
 
-    if (iframe.parentNode) {
-      iframe.parentNode.insertBefore(box, iframe);
-    }
+    document.body.appendChild(box);
+    positionBox(box, iframe);
+
+    var reposition = function() { positionBox(box, iframe); };
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    box._polloraCleanup = function() {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
 
     new MutationObserver(function() {
       var newUrl = iframe.src || iframe.getAttribute('src') || '(no src)';
@@ -433,15 +451,70 @@ function hack_iframe_openInTab() {
 }
 
 function hack_iframe_inject(input) {
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0f0f14;';
-  var iframe = document.createElement('iframe');
-  iframe.src = input;
-  iframe.style.cssText = 'width:100%;height:100%;border:none;';
-  iframe.setAttribute('allowfullscreen', '');
-  iframe.setAttribute('allow', 'autoplay; fullscreen');
-  overlay.appendChild(iframe);
-  document.body.appendChild(overlay);
+  var iframes = document.querySelectorAll('iframe');
+  if (iframes.length === 0) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0f0f14;';
+    var newIframe = document.createElement('iframe');
+    newIframe.src = input;
+    newIframe.style.cssText = 'width:100%;height:100%;border:none;';
+    newIframe.setAttribute('allowfullscreen', '');
+    newIframe.setAttribute('allow', 'autoplay; fullscreen');
+    overlay.appendChild(newIframe);
+    document.body.appendChild(overlay);
+    return;
+  }
+
+  var pickerStyle = document.createElement('style');
+  pickerStyle.id = 'pollora-inject-picker';
+  pickerStyle.textContent =
+    '.pollora-inject-highlight { outline: 4px solid #7c5cfc !important; ' +
+    'outline-offset: -2px !important; cursor: crosshair !important; ' +
+    'box-shadow: inset 0 0 0 9999px rgba(124,92,252,0.1) !important; }' +
+    '#pollora-inject-banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); ' +
+    'z-index: 999999; background: #1a1a24; border: 1px solid #7c5cfc; border-radius: 10px; ' +
+    'padding: 10px 20px; font-family: sans-serif; font-size: 13px; color: #e8e8f0; ' +
+    'box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; }' +
+    '#pollora-inject-banner span { color: #7c5cfc; font-weight: bold; }' +
+    '#pollora-inject-banner small { display: block; color: #8888a0; margin-top: 4px; font-size: 11px; }';
+  document.head.appendChild(pickerStyle);
+
+  var banner = document.createElement('div');
+  banner.id = 'pollora-inject-banner';
+  banner.innerHTML = '<span>Click an iframe</span> to replace its content<small>Press Escape to cancel</small>';
+  document.body.appendChild(banner);
+
+  function cleanup() {
+    iframes.forEach(function(f) {
+      f.classList.remove('pollora-inject-highlight');
+      f.removeEventListener('mouseenter', onEnter);
+      f.removeEventListener('mouseleave', onLeave);
+      f.removeEventListener('click', onClick);
+    });
+    document.removeEventListener('keydown', onKey);
+    var s = document.getElementById('pollora-inject-picker');
+    if (s) s.remove();
+    if (banner.parentNode) banner.remove();
+  }
+
+  function onEnter() { this.classList.add('pollora-inject-highlight'); }
+  function onLeave() { this.classList.remove('pollora-inject-highlight'); }
+  function onClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.src = input;
+    cleanup();
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') cleanup();
+  }
+
+  iframes.forEach(function(f) {
+    f.addEventListener('mouseenter', onEnter);
+    f.addEventListener('mouseleave', onLeave);
+    f.addEventListener('click', onClick);
+  });
+  document.addEventListener('keydown', onKey);
 }
 
 /* ── Unblocked Games Tools ── */
@@ -835,7 +908,7 @@ const HACKS = [
       },
       {
         name: "Inject Iframe",
-        description: "Paste a URL to load it as a fullscreen iframe overlay",
+        description: "Enter a URL, then pick an iframe on the page to replace",
         needsInput: true,
         inputLabel: "URL to load in iframe:",
         inputDefault: "https://example.com",
